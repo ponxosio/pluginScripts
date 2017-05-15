@@ -3,14 +3,17 @@ import abc
 class PeristalticPump(object):
 	__metaclass__  = abc.ABCMeta
 	
+	normal = 0
+	inverted = 1
+	
 	@abc.abstractmethod
 	def __init__(self, params):
 		"""constructor"""
 
 	@abc.abstractmethod
-	def startPumping(self, communications, rate):
+	def startPumping(self, communications, direction, rate):
 		"""
-			must send instructions to the machine to start pumping with a rate of "rate" l/s
+			must send instructions to the machine to start pumping in direction "direction" with a rate of "rate" l/s
 			the command must be sended throught the communications object,
 			communications object has the next api:
 				*) nbytessend sendString(string) -- send the string to the machine, return the bytes sended;
