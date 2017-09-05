@@ -8,7 +8,7 @@ class EVOPROG_HEATER(Temperature):
 		self.actualTemperature = 0;
 
 	def applyTemperature(self, communications, temperature):
-		"""must send instructions to change the temperature to the given real number "temperature" in K, 
+		"""must send instructions to change the temperature to the given real number "temperature" in C, 
 		communication with the machine must be done via communications object
 		ommunications object has the next api:
 				*) nbytessend sendString(string) -- send the string to the machine, return the bytes sended;
@@ -16,7 +16,7 @@ class EVOPROG_HEATER(Temperature):
 				*) string readUntil(endCharacter) -- returns a string received from the machine, stops when the endCharacter arrives;
 				*) void synch() -- synchronize with the machine, not always necesary, only for protocols compatibles;
 		"""
-		degreeTemperature = temperature - 273.15;
+		degreeTemperature = temperature ;#- 273.15;
 		if (degreeTemperature != self.actualTemperature) :
 			if (degreeTemperature == 0) :
 				self.turnOff(communications);

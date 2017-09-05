@@ -1,5 +1,10 @@
+import threading
 import time
 from routingValve import RoutingValve
+
+def releaseLock(lock):
+	lock.release();
+
 
 class EVOPROG_VALVE_II_A(RoutingValve):
 	
@@ -7,6 +12,7 @@ class EVOPROG_VALVE_II_A(RoutingValve):
 		"""constructor"""
 		self.i2cAddress = params['i2c_address'];
 		self.actualPosition = 0;
+		self.movingLock = threading.Lock();
 
 	def moveToPosition(self, communications, position):
 		"""
@@ -22,10 +28,14 @@ class EVOPROG_VALVE_II_A(RoutingValve):
 			if (position == 0) :
 				self.closeValve(communications);
 			else :
-				positionsMove = abs(self.actualPosition - position);
-			
-				communications.sendString("M " + str(self.i2cAddress) + " " + str(position));
-				time.sleep(.400 * positionsMove);
+				if (self.i2cAddress != "-1") :
+					self.movingLock.acquire();
+					positionsMove = abs(self.actualPosition - position);
+				
+					communications.sendString("M " + str(self.i2cAddress) + " " + str(position));
+					
+					timer = threading.Timer(.400 * positionsMove, releaseLock , kwargs = {"lock" : self.movingLock});
+					timer.start();				
 				self.actualPosition = position;
 	
 	def closeValve(self, communications):
@@ -38,6 +48,11 @@ class EVOPROG_VALVE_II_A(RoutingValve):
 				*) string readUntil(endCharacter) -- returns a string received from the machine, stops when the endCharacter arrives;
 				*) void synchronize() -- synchronize with the machine;
 		"""
-		communications.sendString("H " + str(self.i2cAddress));
-		time.sleep(3);
+		if (self.i2cAddress != "-1") :
+			self.movingLock.acquire();
+			
+			communications.sendString("H " + str(self.i2cAddress));
+			
+			timer = threading.Timer(3, releaseLock , kwargs = {"lock" : self.movingLock});
+			timer.start();		
 		self.actualPosition = 0;

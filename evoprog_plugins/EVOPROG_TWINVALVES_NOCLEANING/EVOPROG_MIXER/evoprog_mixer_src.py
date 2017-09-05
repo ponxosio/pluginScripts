@@ -1,3 +1,4 @@
+import datetime
 import threading
 import time
 from mixer import Mixer;
@@ -7,7 +8,9 @@ class EVOPROG_MIXER(Mixer):
 	def __init__(self, params):
 		"""constructor"""
 		self.controllerId = params["controller_id"];
-		self.positions = params["fan_positions"];
+		
+		positionStr = params["fan_positions"];
+		self.positions = positionStr.split(",");
 		
 		self.actualSpeed = 0;
 		self.lockWorking = threading.Lock();

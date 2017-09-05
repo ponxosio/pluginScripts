@@ -28,14 +28,14 @@ class EVOPROG_VALVE_I(RoutingValve):
 			if (position == 0) :
 				self.closeValve(communications);
 			else :
-				self.movingLock.acquire();
-				positionsMove = abs(self.actualPosition - position);
-			
-				communications.sendString("M " + str(self.i2cAddress) + " " + str(position));
+				if (self.i2cAddress != "-1") :
+					self.movingLock.acquire();
+					positionsMove = abs(self.actualPosition - position);
 				
-				timer = threading.Timer(.400 * positionsMove, releaseLock , kwargs = {"lock" : self.movingLock});
-				timer.start();
-				
+					communications.sendString("M " + str(self.i2cAddress) + " " + str(position));
+					
+					timer = threading.Timer(.400 * positionsMove, releaseLock , kwargs = {"lock" : self.movingLock});
+					timer.start();				
 				self.actualPosition = position;
 	
 	def closeValve(self, communications):
@@ -48,11 +48,11 @@ class EVOPROG_VALVE_I(RoutingValve):
 				*) string readUntil(endCharacter) -- returns a string received from the machine, stops when the endCharacter arrives;
 				*) void synchronize() -- synchronize with the machine;
 		"""
-		self.movingLock.acquire();
-		
-		communications.sendString("H " + str(self.i2cAddress));
-		
-		timer = threading.Timer(3, releaseLock , kwargs = {"lock" : self.movingLock});
-		timer.start();
-		
+		if (self.i2cAddress != "-1") :
+			self.movingLock.acquire();
+			
+			communications.sendString("H " + str(self.i2cAddress));
+			
+			timer = threading.Timer(3, releaseLock , kwargs = {"lock" : self.movingLock});
+			timer.start();		
 		self.actualPosition = 0;
