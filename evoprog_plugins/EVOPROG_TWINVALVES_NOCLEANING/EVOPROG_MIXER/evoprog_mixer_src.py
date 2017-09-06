@@ -4,6 +4,8 @@ import time
 from mixer import Mixer;
 
 class EVOPROG_MIXER(Mixer):
+	lastId = 0;
+	idMaster = 0;
 
 	def __init__(self, params):
 		"""constructor"""
@@ -14,6 +16,10 @@ class EVOPROG_MIXER(Mixer):
 		
 		self.actualSpeed = 0;
 		self.lockWorking = threading.Lock();
+		
+		self.id = EVOPROG_MIXER.lastId;
+		EVOPROG_MIXER.lastId += 1;
+		
 		
 	def setNormalIntensity(self, communications) :
 		for pos in self.positions :
@@ -34,20 +40,20 @@ class EVOPROG_MIXER(Mixer):
 			if (intensity == 0) :
 				self.stopMixing(communications);
 			else :
-				self.lockWorking.acquire();
-				
-				if (self.actualSpeed == 0 and intensity < 40) :
-					for pos in self.positions :
-						communications.sendString("FAN " + str(self.controllerId) + " " + str(pos) + " 40");
+				if (self.id == EVOPROG_MIXER.idMaster) :
+					self.lockWorking.acquire();
 					
-					timer = threading.Timer(3, self.setNormalIntensity , kwargs = {"communications" : communications});
-					timer.start();
-				else :
-					for pos in self.positions :
-						communications.sendString("FAN " + str(self.controllerId) + " " + str(pos) + " " + str(intensity));
-					
-					self.lockWorking.release();
-					
+					if (self.actualSpeed == 0 and intensity < 40) :
+						for pos in self.positions :
+							communications.sendString("FAN " + str(self.controllerId) + " " + str(pos) + " 40");
+						
+						timer = threading.Timer(3, self.setNormalIntensity , kwargs = {"communications" : communications});
+						timer.start();
+					else :
+						for pos in self.positions :
+							communications.sendString("FAN " + str(self.controllerId) + " " + str(pos) + " " + str(intensity));
+						
+						self.lockWorking.release();					
 				self.actualSpeed = intensity;
 
 	def stopMixing(self, communications):
@@ -60,10 +66,12 @@ class EVOPROG_MIXER(Mixer):
 				*) void synch() -- synchronize with the machine, not always necesary, only for protocols compatibles;
 		"""
 		if (self.actualSpeed != 0) :
-			self.lockWorking.acquire();
-			
-			for pos in self.positions :
-				communications.sendString("FAN " + str(self.controllerId) + " " + str(pos) + " 0");
-			
+			if (self.id == EVOPROG_MIXER.idMaster) :
+				self.lockWorking.acquire();
+				
+				for pos in self.positions :
+					communications.sendString("FAN " + str(self.controllerId) + " " + str(pos) + " 0");
+
+				self.lockWorking.release();
+				
 			self.actualSpeed = 0;
-			self.lockWorking.release();

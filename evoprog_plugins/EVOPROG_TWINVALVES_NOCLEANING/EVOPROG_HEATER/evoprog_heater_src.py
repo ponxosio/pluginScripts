@@ -1,11 +1,16 @@
 from temperature import Temperature;
 
 class EVOPROG_HEATER(Temperature):
+	lastId = 0;
+	idMaster = 0;
 
 	def __init__(self, params):
 		"""constructor"""
 		self.controllerId = params["controller_id"];
 		self.actualTemperature = 0;
+		
+		self.id = EVOPROG_HEATER.lastId;
+		EVOPROG_HEATER.lastId += 1;
 
 	def applyTemperature(self, communications, temperature):
 		"""must send instructions to change the temperature to the given real number "temperature" in C, 
@@ -21,9 +26,10 @@ class EVOPROG_HEATER(Temperature):
 			if (degreeTemperature == 0) :
 				self.turnOff(communications);
 			else :
-				communications.sendString("TEMP " + str(self.controllerId) + " " + str(degreeTemperature));
-				if (self.actualTemperature == 0) :
-					communications.sendString("reg " + str(self.controllerId));
+				if (self.id == EVOPROG_HEATER.idMaster) :
+					communications.sendString("TEMP " + str(self.controllerId) + " " + str(degreeTemperature));
+					if (self.actualTemperature == 0) :
+						communications.sendString("reg " + str(self.controllerId));
 				self.actualTemperature = degreeTemperature;
 
 	def turnOff(self, communications):
@@ -35,5 +41,6 @@ class EVOPROG_HEATER(Temperature):
 				*) string readUntil(endCharacter) -- returns a string received from the machine, stops when the endCharacter arrives;
 				*) void synch() -- synchronize with the machine, not always necesary, only for protocols compatibles;
 		"""
-		communications.sendString("regStop " + str(self.controllerId));
+		if (self.id == EVOPROG_HEATER.idMaster) :
+			communications.sendString("regStop " + str(self.controllerId));
 		self.actualTemperature = 0;
